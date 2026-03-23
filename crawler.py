@@ -63,6 +63,20 @@ class WebCrawler:
         self.session.headers.update({
             'User-Agent': 'Mozilla/5.0'
         })
+        self.interesting_keywords = [
+            "admin",
+            "login",
+            "dashboard",
+            "panel",
+            "portal",
+            "manage",
+            "config",
+            "setup",
+            "backup",
+            "phpmyadmin"
+        ]
+
+        self.interesting_urls = []
 
         # Setup logging
         logging.basicConfig(level=logging.INFO)
@@ -99,8 +113,17 @@ class WebCrawler:
                     for link in links:
                         if link not in self.visited_urls:
                             url_queue.append(link)
+
                             if link not in self.found_links:
                                 self.found_links.append(link)
+
+                            # Detect interesting directories
+                            parsed_path = urlparse(link).path.lower()
+
+                            for keyword in self.interesting_keywords:
+                                if keyword in parsed_path:
+                                    if link not in self.interesting_urls:
+                                        self.interesting_urls.append(link)
 
                 add_delay()
 
@@ -132,6 +155,7 @@ class WebCrawler:
             'visited_urls': list(self.visited_urls),
             'forms': self.found_forms,
             'links': self.found_links,
+            'interesting_urls': self.interesting_urls,
             'total_pages': len(self.visited_urls),
             'total_forms': len(self.found_forms)
         }
