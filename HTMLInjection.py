@@ -3,33 +3,31 @@ from bs4 import BeautifulSoup
 from urllib.parse import urlparse, parse_qs, urlencode, urlunparse, urljoin
 
 
-class SimpleXSSScanner:
+class HTMLInjectionScanner:
 
     def __init__(self):
         self.session = requests.Session()
 
         self.payloads = [
-            "<script>alert('XSS1')</script>",
-            "\"><script>alert('XSS1')</script>",
-            "<img src=x onerror=alert('XSS1')>"
+            "<h1>INJECTED</h1>",
+            "\"><h1>INJECTED</h1>",
+            "</title><h1>INJECTED</h1>"
         ]
 
     def scan_url(self, url):
         results = []
 
-        print(f"\nScanning: {url}")
+        print(f"\n[Scanning URL] {url}")
 
         parsed = urlparse(url)
-
-        # Extract parameters
         params = parse_qs(parsed.query)
 
         if not params:
-            print("No parameters found.")
+            print("[INFO] No query parameters detected.")
             return results
 
         for param in params:
-            print(f"\nTesting parameter: {param}")
+            print(f"\n[Testing Parameter] {param}")
 
             for payload in self.payloads:
 
@@ -47,7 +45,7 @@ class SimpleXSSScanner:
                     parsed.fragment
                 ))
 
-                print(f"Injecting payload: {payload}")
+                print(f"[Payload] {payload}")
 
                 try:
                     response = self.session.get(test_url, timeout=5)
@@ -55,38 +53,35 @@ class SimpleXSSScanner:
 
                     results.append({
                         "payload": payload,
-                        "response": response_text,
                         "url": test_url,
-                        "type": "xss"
+                        "type": "html_injection"
                     })
 
-                    if self.detect_xss(response_text, payload):
-                        print("🚨 XSS FOUND")
-                        print("URL:", test_url)
-                        print("Payload:", payload)
+                    if self.detect_html_injection(response_text):
+                        print("⚠️ [VULNERABLE] HTML Injection detected")
+                        print(f"→ URL: {test_url}")
+                        print(f"→ Parameter: {param}")
+                        print(f"→ Payload: {payload}")
 
                 except Exception as e:
-                    print(f"Request error: {e}")
+                    print(f"[ERROR] Request failed: {e}")
 
         if not results:
-            print("No XSS detected.")
+            print("[INFO] No injection points tested.")
 
         return results
-    
 
-    def detect_xss(self, html, payload):
-        return payload in html
-    
+    def detect_html_injection(self, html):
+        return "INJECTED" in html
+
     def scan_form(self, form):
         results = []
 
-        print(f"\n[Form Scan] {form['url']}")
+        print(f"\n[Scanning Form] {form['url']}")
 
-        # Build full URL
         target_url = urljoin(form["url"], form["action"])
         method = form["method"].upper()
 
-        # Extract input names
         input_names = []
         for input_field in form["inputs"]:
             name = input_field.get("name")
@@ -94,19 +89,18 @@ class SimpleXSSScanner:
                 input_names.append(name)
 
         if not input_names:
-            print("No usable inputs found.")
+            print("[INFO] No usable input fields found.")
             return results
 
         for param in input_names:
-            print(f"\nTesting input: {param}")
+            print(f"\n[Testing Input] {param}")
 
             for payload in self.payloads:
 
-                # Build data
                 data = {name: "test" for name in input_names}
                 data[param] = payload
 
-                print(f"Injecting payload: {payload}")
+                print(f"[Payload] {payload}")
 
                 try:
                     if method == "GET":
@@ -118,26 +112,26 @@ class SimpleXSSScanner:
 
                     results.append({
                         "payload": payload,
-                        "response": response_text,
                         "url": target_url,
-                        "type": "xss"
+                        "type": "html_injection",
+                        "param": param
                     })
 
-                    if self.detect_xss(response_text, payload):
-                        print("🚨 XSS FOUND")
-                        print("URL:", target_url)
-                        print("Payload:", payload)
+                    if self.detect_html_injection(response_text):
+                        print("⚠️ [VULNERABLE] HTML Injection detected (Form)")
+                        print(f"→ URL: {target_url}")
+                        print(f"→ Input: {param}")
+                        print(f"→ Payload: {payload}")
 
                 except Exception as e:
-                    print(f"Request error: {e}")
-
-                
+                    print(f"[ERROR] Request failed: {e}")
 
         return results
-    
+
+
 if __name__ == "__main__":
 
-    scanner = SimpleXSSScanner()
+    scanner = HTMLInjectionScanner()
 
     target = input(
         "Enter URL with parameter (example: http://testphp.vulnweb.com/search.php?test=1): "

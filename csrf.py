@@ -63,7 +63,7 @@ class CSRFScanner:
                     token_value = field.get('value', '')
                     break
 
-        # ❌ No CSRF token
+        # No CSRF token
         if not has_token:
             if not self._response_contains_token(url):
 
