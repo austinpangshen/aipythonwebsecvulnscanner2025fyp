@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Scanner UI</title>
+</head>
+<body>
+
+<h1>Vulnerability Scanner</h1>
+
+<form method="POST">
+    <input type="text" name="target" placeholder="Enter URL" required>
+    <button type="submit">Scan</button>
+</form>
+
+{% if results %}
+
+    {% if results.error %}
+        <p style="color:red;">Error: {{ results.error }}</p>
+    {% endif %}
+
+    <h2>Links</h2>
+    <ul>
+        {% for l in results.links %}
+            <li>{{ l }}</li>
+        {% endfor %}
+    </ul>
+
+    <h2>XSS</h2>
+    <ul>
+    {% for x in results.get("xss", []) %}
+        <li>
+            <b>URL:</b> {{ x.url }} <br>
+            <b>Payload:</b> {{ x.payload }} <br>
+
+            <details>
+                <summary>📄 View Response (Proof)</summary>
+                <pre>{{ x.response[:500] }}</pre>
+            </details>
+        </li>
+    {% endfor %}
+    </ul>
+
+    <h2>HTML Injection</h2>
+    <ul>
+    {% for h in results.get("html", []) %}
+        <li>
+            <b>URL:</b> {{ h.url }} <br>
+            <b>Payload:</b> {{ h.payload }} <br>
+
+            <details>
+                <summary>📄 View Response</summary>
+                <pre>{{ h.response[:500] }}</pre>
+            </details>
+        </li>
+    {% endfor %}
+    </ul>
+
+    <h2>CSRF</h2>
+    <ul>
+    {% for c in results.get("csrf", []) %}
+        <li>
+            <b>URL:</b> {{ c.url }} <br>
+            <b>Method:</b> {{ c.method }} <br>
+            <b>Issue:</b> {{ c.subtype }} <br>
+            <b>Impact:</b> {{ c.impact }}
+        </li>
+    {% endfor %}
+    </ul>
+
+{% endif %}
+
+<button onclick="downloadPDF()">📄 Download Report</button>
+
+<script>
+function downloadPDF() {
+    window.location.href = "/download_pdf";
+}
+</script>
+
+</body>
+</html>
