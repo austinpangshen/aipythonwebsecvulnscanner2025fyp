@@ -20,13 +20,23 @@ class CSVLogger:
             "payload",
             "payload_length",
             "special_chars",
-            "is_reflected",
+
             "response_length",
-            "error_detected",
             "length_diff",
+
+            "has_script",
+            "has_event",
+            "has_js_protocol",
+            "has_h1",
+            "has_basic_html",
+            "has_html_tag",
+
+            # response signals
+            "is_reflected",
+            "error_detected",
+
             "label"
         ]
-
         # Create file with header if not exists
         if not os.path.exists(self.filename):
             print("[DEBUG] Creating new CSV file...")
